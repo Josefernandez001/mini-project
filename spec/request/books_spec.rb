@@ -13,8 +13,8 @@ describe 'Books API', type: :request do
       get '/api/v1/books'
 
       expect(response).to have_http_status(:success)
-      expect(JSON.parse(response.body).size).to eq(2)
-      expect(JSON.parse(response.body)).to eq(
+      expect(response_body.size).to eq(2)
+      expect(response_body).to eq(
         [
           {
             'id' => 1,
@@ -22,6 +22,38 @@ describe 'Books API', type: :request do
             'author_name' => "noa noone",
             'author_age' => 100
           },
+          {
+            'id' => 2,
+            'title' => "life as dead",
+            'author_name' => "noa noone",
+            'author_age' => 100
+          }
+        ]
+      )
+    end
+
+    it 'returns a subset of books based on limit' do
+      get '/api/v1/books', params: { limit: 1 }
+      expect(response).to have_http_status(:success)
+      expect(response_body.size).to eq(1)
+      expect(response_body).to eq(
+        [
+          {
+            'id' =>  1,
+            'title' => "life as dead",
+            'author_name' => "noa noone",
+            'author_age' => 100
+          }
+        ]
+      )
+    end
+
+    it 'returns a subset of books based on limit and offset ' do
+      get '/api/v1/books', params: { limit: 1, offset: 1}
+      expect(response).to have_http_status(:success)
+      expect(response_body.size).to eq(1)
+      expect(response_body).to eq(
+        [
           {
             'id' => 2,
             'title' => "life as dead",
@@ -41,7 +73,7 @@ describe 'Books API', type: :request do
       get "/api/v1/books/#{ book.id }"
 
       expect(response).to have_http_status(:ok)
-      expect(JSON.parse(response.body)).to eq(
+      expect(response_body).to eq(
         {
           'id' => 1,
           'title' => "life as dead",
@@ -70,7 +102,7 @@ describe 'Books API', type: :request do
         }, headers: headers
       }.to change {Book.count}.from(0).to(1)
 
-      expect(JSON.parse(response.body)).to eq(
+      expect(response_body).to eq(
         {
           'id' => 1,
           'title' => "the life of",
@@ -110,7 +142,7 @@ describe 'Books API', type: :request do
         author: {first_name: 'naomi', last_name: 'novik', age: 49}
       }, headers: headers
 
-      expect(JSON.parse(response.body)).to eq(
+      expect(response_body).to eq(
         {
           'id' => 1,
           'title' => "the golden enclaves",
@@ -128,7 +160,7 @@ describe 'Books API', type: :request do
         author: {first_name: 'noa', last_name: 'noone', age: 100}
       }, headers: headers
 
-      expect(JSON.parse(response.body)).to eq(
+      expect(response_body).to eq(
         {
           'id' => 1,
           'title' => "the golden enclaves",

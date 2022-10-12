@@ -14,6 +14,7 @@ class BooksRepresenter
       }
      end
   end
+  
 
   private
 
