@@ -2,48 +2,59 @@ require 'net/http'
 
 class Api::V1::BooksController  < ApplicationController
   MAX_PAGINATION_LIMIT = 100
-  before_action :find_a_book, only: %i[update destroy show]
-  before_action :author_exists, only: %i[create]
 
   def index
     books = Book.limit(limit).offset(params[:offset])
-    render json: BooksRepresenter.new(books).as_json
+    render json: books, each_serializer: BookSerializer, status: :ok
   end
 
   def show
+		@book = BookModel::BookFind.call(params[:id])
+
     return render json: {mesagge:'book not found'}, status: :bad_request if @book.nil?
 
-    return render json:  BookRepresenter.new(@book).as_json, status: :ok
+    return render json:  @book, each_serializer: BookSerializer, status: :ok
   end
 
   def create
+    BookWorker.perform_async(
+      book_params[:title], author_params[:first_name],
+      author_params[:last_name], author_params[:age]
+    )
 
-    book = Book.new(book_params.merge(author_id: @author.id))
-    # UpdteSkuJob.perform_later(book_params[:name])
+    book = BookModel::BookInstance.call(
+      book_params[:title], author_params[:first_name],
+      author_params[:last_name], author_params[:age]
+    )
 
-    return render json: BookRepresenter.new(book).as_json, status: :created if book.save
+    return render json: book.errors, status: :unprocessable_entity unless book.valid?
 
-    render json: book.errors, status: :unprocessable_entity
+    render json: book , serializer: BookSerializer
 
   end
 
 
   def update
-    author = @book.author
-    author.update(author_params) unless author.eql?(author_params)
+    @book = BookModel::BookUpdate.call(
+      params[:id], book_params[:title],
+      author_params[:first_name], author_params[:last_name],
+      author_params[:age]
+    )
 
     return render json: {mesagge:'book not found'}, status: :bad_request if @book.nil?
 
-    return render json: BookRepresenter.new(@book).as_json, status: :accepted  if @book.update(book_params)
+    return render json: { mesagge: 'wrong data', errors: @book.errors }, status: :bad_request if @book.errors.size > 0
 
-    render json: { mesagge: 'wrong data', errors: @book.errors }, status: :bad_request
+    render json: @book, each_serializer: BookSerializer, status: :accepted
 
   end
 
   def destroy
+    @book = BookModel::BookDelete.call(params[:id])
+
     return render json: {mesagge:'book not found'}, status: :bad_request if @book.nil?
 
-    render json: {mesagge:'delete sucesfully'}, status: :no_content  if @book.destroy!
+    render json: {mesagge:'delete sucesfully'}, status: :no_content  if @book.destroyed?
   end
 
   private
@@ -55,9 +66,6 @@ class Api::V1::BooksController  < ApplicationController
     ].min
   end
 
-  def find_a_book
-    @book = Book.find_by(id: params[:id])
-  end
 
   def book_params
     params.require(:book).permit(:title)
@@ -67,9 +75,5 @@ class Api::V1::BooksController  < ApplicationController
     params.require(:author).permit(:first_name, :last_name, :age)
   end
 
-  def author_exists
-    return @author = Author.create(author_params) unless Author.exists?(author_params)
-    @author = Author.find_by(author_params)
-  end
 end
 
