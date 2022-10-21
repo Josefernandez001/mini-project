@@ -17,16 +17,18 @@ describe 'Books API', type: :request do
       expect(response_body).to eq(
         [
           {
-            'id' => 1,
-            'title' => "life as dead",
-            'author_name' => "noa noone",
-            'author_age' => 100
+            "author"=>{
+              "age"=>100, "first_name"=>"noa",
+              "last_name"=>"noone"
+            },
+            "title"=>"life as dead"
           },
           {
-            'id' => 2,
-            'title' => "life as dead",
-            'author_name' => "noa noone",
-            'author_age' => 100
+            "author"=>{
+              "age"=>100, "first_name"=>"noa",
+              "last_name"=>"noone"
+            },
+            "title"=>"life as dead"
           }
         ]
       )
@@ -39,10 +41,11 @@ describe 'Books API', type: :request do
       expect(response_body).to eq(
         [
           {
-            'id' =>  1,
-            'title' => "life as dead",
-            'author_name' => "noa noone",
-            'author_age' => 100
+            "author"=>{
+              "age"=>100, "first_name"=>"noa",
+              "last_name"=>"noone"
+            },
+          "title"=>"life as dead"
           }
         ]
       )
@@ -55,10 +58,11 @@ describe 'Books API', type: :request do
       expect(response_body).to eq(
         [
           {
-            'id' => 2,
-            'title' => "life as dead",
-            'author_name' => "noa noone",
-            'author_age' => 100
+            "author"=>{
+              "age"=>100, "first_name"=>"noa",
+              "last_name"=>"noone"
+            },
+            "title"=>"life as dead"
           }
         ]
       )
@@ -75,10 +79,11 @@ describe 'Books API', type: :request do
       expect(response).to have_http_status(:ok)
       expect(response_body).to eq(
         {
-          'id' => 1,
-          'title' => "life as dead",
-          'author_name' => "noa noone",
-          'author_age' => 100
+          "author"=>{
+            "age"=>100, "first_name"=>"noa",
+            "last_name"=>"noone"
+          },
+          "title"=>"life as dead"
         }
       )
     end
@@ -92,8 +97,13 @@ describe 'Books API', type: :request do
   end
 
   describe 'POST /books' do
+
+    let!(:user){FactoryBot.create(:user)}
     it 'should create a book' do
-      headers = { "ACCEPT" => "application/json" }
+      headers = {
+        "ACCEPT" => "application/json",
+        "Authorization" => 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxfQ.kK4OImFfNUEiTyj5uGl00buwlyITPJQHKBzpeRH6lOM'
+      }
 
       expect {
         post "/api/v1/books", params: {
@@ -103,21 +113,19 @@ describe 'Books API', type: :request do
       }.to change {Book.count}.from(0).to(1)
 
       expect(response_body).to eq(
-        {
-          'id' => 1,
-          'title' => "the life of",
-          'author_name' => "noa noone",
-          'author_age' => 100
-        }
+        {"author"=>{"age"=>100, "first_name"=>"noa", "last_name"=>"noone"}, "title"=>"the life of"}
       )
 
       expect(response.content_type).to eq("application/json; charset=utf-8")
-      expect(response).to have_http_status(:created)
+      expect(response).to have_http_status(:ok)
       expect(Author.count).to eq(1)
     end
 
     it 'should not create a book' do
-      headers = { "ACCEPT" => "application/json" }
+      headers = {
+        "ACCEPT" => "application/json",
+        "Authorization" => 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxfQ.kK4OImFfNUEiTyj5uGl00buwlyITPJQHKBzpeRH6lOM'
+      }
 
       post "/api/v1/books", params: {
         book: { title: '' },
@@ -130,30 +138,33 @@ describe 'Books API', type: :request do
 
   describe 'UPDATE /books/:id' do
     let(:author){FactoryBot.create(:author)}
+    let!(:user){FactoryBot.create(:user)}
     before do
       FactoryBot.create(:book, title: 'life as dead', author: author)
     end
 
     it 'should update a book and author' do
-      headers = { "ACCEPT" => "application/json" }
+      headers = {
+        "ACCEPT" => "application/json",
+        "Authorization" => 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxfQ.kK4OImFfNUEiTyj5uGl00buwlyITPJQHKBzpeRH6lOM'
+      }
 
       put '/api/v1/books/1', params: {
         book: { title: 'the golden enclaves' },
-        author: {first_name: 'naomi', last_name: 'novik', age: 49}
+        author: {first_name: 'naomi', last_name: 'novik', age: 45}
       }, headers: headers
 
       expect(response_body).to eq(
-        {
-          'id' => 1,
-          'title' => "the golden enclaves",
-          'author_name' => "naomi novik",
-          'author_age' => 49
-        }
+        {"author"=>{"age"=>45, "first_name"=>"naomi", "last_name"=>"novik"}, "title"=>'the golden enclaves'}
+
       )
       expect(response).to have_http_status(:accepted)
     end
     it 'should update a book and author' do
-      headers = { "ACCEPT" => "application/json" }
+      headers = {
+        "ACCEPT" => "application/json",
+        "Authorization" => 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxfQ.kK4OImFfNUEiTyj5uGl00buwlyITPJQHKBzpeRH6lOM'
+      }
 
       put '/api/v1/books/1', params: {
         book: { title: 'the golden enclaves' },
@@ -161,12 +172,7 @@ describe 'Books API', type: :request do
       }, headers: headers
 
       expect(response_body).to eq(
-        {
-          'id' => 1,
-          'title' => "the golden enclaves",
-          'author_name' => "noa noone",
-          'author_age' => 100
-        }
+        {"author"=>{"age"=>100, "first_name"=>"noa", "last_name"=>"noone"}, "title"=>'the golden enclaves'}
       )
       expect(response).to have_http_status(:accepted)
     end
@@ -174,18 +180,25 @@ describe 'Books API', type: :request do
 
   describe 'DELETE /books/:id' do
     let(:author){FactoryBot.create(:author)}
+    let!(:user){FactoryBot.create(:user)}
     let!(:book){ FactoryBot.create(:book, title: 'life as dead', author: author) }
+    headers = {
+      "ACCEPT" => "application/json",
+      "Authorization" => 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxfQ.kK4OImFfNUEiTyj5uGl00buwlyITPJQHKBzpeRH6lOM'
+    }
 
     it 'should delete a book' do
+
       expect {
-        delete "/api/v1/books/#{ book.id }"
+        delete "/api/v1/books/#{ book.id }", headers: headers
       }.to change { Book.count }.from(1).to(0)
 
       expect(response).to have_http_status(:no_content)
     end
 
     it 'should dont delete a book' do
-      delete '/api/v1/books/999'
+
+      delete '/api/v1/books/999', headers: headers
 
       expect(response).to have_http_status(:bad_request)
     end
